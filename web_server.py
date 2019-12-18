@@ -3,6 +3,7 @@ import socket
 HOST = 'localhost'
 PORT = 8000
 MAX_REQUEST_BYTES = 1024
+HTTP_LINE_SEPARATOR = "\r\n"
 
 
 def configure_socket(s):
@@ -22,12 +23,24 @@ def send_response(conn, response):
     conn.sendall(response_bytes)
 
 
+def process_request(request):
+    print(request)
+    response_body = "Hello World"
+    response = HTTP_LINE_SEPARATOR.join([
+        "HTTP/1.1 200 OK",
+        "Content-Type: text/html",
+        f"Content-Length: {len(response_body)}",
+        "",
+        response_body
+    ])
+    return response
+
+
 with socket.socket() as s:
     configure_socket(s)
     while True:
         conn, addr = s.accept()
         with conn:
             request = load_request(conn)
-            print(request)
-            response = "Hello World"
+            response = process_request(request)
             send_response(conn, response)
