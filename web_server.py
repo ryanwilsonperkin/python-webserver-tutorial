@@ -1,4 +1,5 @@
 import socket
+from .web_application import application
 
 HOST = 'localhost'
 PORT = 8000
@@ -56,7 +57,7 @@ def parse_request(raw_request):
 
 def process_request(request):
     print(request)
-    response_body = f"Hello from {request['PATH_INFO']}"
+    response_body = application(request)
     response = HTTP_LINE_SEPARATOR.join([
         "HTTP/1.1 200 OK",
         "Content-Type: text/html",
