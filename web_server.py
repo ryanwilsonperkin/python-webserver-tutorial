@@ -19,11 +19,6 @@ def load_raw_request(conn):
     return request_bytes.decode('utf-8')
 
 
-def send_response(conn, response):
-    response_bytes = response.encode('utf-8')
-    conn.sendall(response_bytes)
-
-
 def parse_header_line(line):
     key, value = line.split(':', maxsplit=1)
     key = 'HTTP_' + key.upper().replace('-', '_').replace(' ', '_')
@@ -55,25 +50,25 @@ def parse_request(raw_request):
     }
 
 
-def process_request(request):
-    print(request)
-    response_body = application(request)
-    response = HTTP_LINE_SEPARATOR.join([
-        "HTTP/1.1 200 OK",
-        "Content-Type: text/html",
-        f"Content-Length: {len(response_body)}",
-        "",
-        response_body
-    ])
-    return response
-
-
 with socket.socket() as s:
     configure_socket(s)
     while True:
         conn, addr = s.accept()
         with conn:
             raw_request = load_raw_request(conn)
-            request = parse_request(raw_request)
-            response = process_request(request)
-            send_response(conn, response)
+            environ = parse_request(raw_request)
+
+            def start_response(status, headers):
+                initial_response = HTTP_LINE_SEPARATOR.join([
+                    f"HTTP/1.1 {status}",
+                    *[f"{key}: {value}" for (key, value) in headers],
+                    "",
+                    ""
+                ])
+                initial_response_bytes = initial_response.encode("utf-8")
+                conn.sendall(initial_response_bytes)
+
+            response_chunks = application(environ, start_response)
+
+            for chunk in response_chunks:
+                conn.sendall(chunk)

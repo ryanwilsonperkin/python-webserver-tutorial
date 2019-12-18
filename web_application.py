@@ -1,8 +1,14 @@
-def application(request):
-    path = request["PATH_INFO"]
+def application(environ, start_response):
+    path = environ['PATH_INFO']
     handler = get_handler_for_path(path)
-    response = handler(request)
-    return response
+    response = handler(environ)
+    response_bytes = response.encode('utf-8')
+
+    start_response('200 OK', [
+        ('Content-Length', str(len(response))),
+        ('Content-Type', 'text/html'),
+    ])
+    return [response_bytes]
 
 
 def get_handler_for_path(path):
